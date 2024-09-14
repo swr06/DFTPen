@@ -23,6 +23,11 @@ namespace Simulation {
 
 	bool DrawingMode = true;
 
+	// DFT :
+	bool ShouldGenDFT = false;
+	DFT2D ImageDFT;
+	float DFTDeltaTime = -1.;
+
 	std::vector<Object> Objects;
 
 	class RayTracerApp : public Simulation::Application
@@ -63,6 +68,9 @@ namespace Simulation {
 
 				ImGui::Text("Samples : %d", Samples.size());
 
+				if (DFTDeltaTime > 0) {
+					ImGui::Text("DFT Delta Time : %lf", DFTDeltaTime);
+				}
 			
 			} ImGui::End();
 		}
@@ -101,8 +109,19 @@ namespace Simulation {
 			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_D)
 			{
 				std::cout << "\nDRAWING MODE OVER\n";
-				DrawingMode = false;
+				DrawingMode = !DrawingMode;
 			}
+
+			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_R)
+			{
+				Samples.clear();
+			}
+
+			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_G)
+			{
+				ShouldGenDFT = true;
+			}
+
 
 			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_F2 && this->GetCurrentFrame() > 5)
 			{
@@ -124,6 +143,7 @@ namespace Simulation {
 	{
 		DrawingMode = true;
 		Samples.reserve(MaxSamples);
+		ImageDFT.Reserve(MaxSamples);
 
 		std::cout << "\nDRAWING MODE IS ACTIVE\n";
 
@@ -190,9 +210,6 @@ namespace Simulation {
 			// Add sample
 			if (Samples.size() < MaxSamples && DrawingMode)
 			{
-
-				
-
 				if (CurrentCursorPos != PrevCursorPos)
 				{
 					glm::vec2 CPos = CurrentCursorPos;
@@ -211,44 +228,68 @@ namespace Simulation {
 				
 			}
 
+			if (!DrawingMode && ShouldGenDFT) {
+				ShouldGenDFT = false;
 
-			int CurrentObjectCount = glm::min(Samples.size(), (size_t)MaxSamples);
 
-			for (int i = 0; i < CurrentObjectCount; i++) {
-				glm::vec4& Pos = Objects[i].Position;
-				Pos.x = (Samples[i].Position.x) * (OrthographicRange - 1.0f);
-				Pos.y = (Samples[i].Position.y) * (OrthographicRange - 1.0f);
-				Pos.w = Samples[i].Active ? 8.0f : 0.5f;
+				float DFT_Time = glfwGetTime();
+
+				ImageDFT.Create(Samples);
+				Samples.clear();
+
+				float DFT_Time2 = glfwGetTime();
+
+				ImageDFT.InverseDFT(Samples);
+
+				DFTDeltaTime = DFT_Time2 - DFT_Time;
+
+				std::cout << "\nGENERATED DFT IN " << DFTDeltaTime << " s\n";
 			}
 
-			// Object SSBO
-			GLuint ObjectSSBO = 0;
-			glGenBuffers(1, &ObjectSSBO);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ObjectSSBO);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Object) * CurrentObjectCount, (void*)Objects.data(), GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
-			// Blit Final Result 
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
+			///////////////
+			// RENDERING //
+			///////////////
+			{
+				int CurrentObjectCount = glm::min(Samples.size(), (size_t)MaxSamples);
 
+				for (int i = 0; i < CurrentObjectCount; i++) {
+					glm::vec4& Pos = Objects[i].Position;
+					Pos.x = (Samples[i].Position.x) * (OrthographicRange - 1.0f);
+					Pos.y = (Samples[i].Position.y) * (OrthographicRange - 1.0f);
+					Pos.w = Samples[i].Active ? 8.0f : 0.5f;
+				}
 
+				// Object SSBO
+				GLuint ObjectSSBO = 0;
+				glGenBuffers(1, &ObjectSSBO);
+				glBindBuffer(GL_SHADER_STORAGE_BUFFER, ObjectSSBO);
+				glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Object) * CurrentObjectCount, (void*)Objects.data(), GL_DYNAMIC_DRAW);
+				glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-			RenderShader.Use();
+				// Rendering ->
 
-			RenderShader.SetMatrix4("u_Projection", Orthographic.GetProjectionMatrix());
-			RenderShader.SetVector2f("u_Dimensions", glm::vec2(app.GetWidth(), app.GetHeight()));
-			RenderShader.SetVector2f("u_Dims", glm::vec2(app.GetWidth(), app.GetHeight()));
+				// Blit Final Result 
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
 
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ObjectSSBO);
+				RenderShader.Use();
 
-			ScreenQuadVAO.Bind();
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, CurrentObjectCount);
-			ScreenQuadVAO.Unbind();
+				RenderShader.SetMatrix4("u_Projection", Orthographic.GetProjectionMatrix());
+				RenderShader.SetVector2f("u_Dimensions", glm::vec2(app.GetWidth(), app.GetHeight()));
+				RenderShader.SetVector2f("u_Dims", glm::vec2(app.GetWidth(), app.GetHeight()));
 
-			glUseProgram(0);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ObjectSSBO);
+
+				ScreenQuadVAO.Bind();
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, CurrentObjectCount);
+				ScreenQuadVAO.Unbind();
+
+				glUseProgram(0);
+			}
+			
 
 			glFinish();
 			app.FinishFrame();
