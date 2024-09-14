@@ -4,12 +4,11 @@
 
 #include "Object.h"
 
-namespace Simulation {
+#include "Sample.h"
 
-	struct Sample {
-		glm::vec2 Position;
-		bool Active;
-	};
+#include "DFT.h"
+
+namespace Simulation {
 
 	std::vector<Sample> Samples;
 
@@ -21,6 +20,8 @@ namespace Simulation {
 
 	glm::vec2 CurrentCursorPos;
 	glm::vec2 PrevCursorPos;
+
+	bool DrawingMode = true;
 
 	std::vector<Object> Objects;
 
@@ -53,6 +54,12 @@ namespace Simulation {
 		{
 			ImGuiIO& io = ImGui::GetIO();
 			if (ImGui::Begin("Debug/Edit Mode")) {
+
+
+				if (DrawingMode)
+					ImGui::Text("Drawing Mode is ACTIVE");
+				else
+					ImGui::Text("Drawing Mode is IN-ACTIVE");
 
 				ImGui::Text("Samples : %d", Samples.size());
 
@@ -90,6 +97,12 @@ namespace Simulation {
 			{
 				this->SetCursorLocked(!this->GetCursorLocked());
 			}
+			
+			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_D)
+			{
+				std::cout << "\nDRAWING MODE OVER\n";
+				DrawingMode = false;
+			}
 
 			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_F2 && this->GetCurrentFrame() > 5)
 			{
@@ -109,7 +122,10 @@ namespace Simulation {
 
 	void Pipeline::StartPipeline()
 	{
+		DrawingMode = true;
 		Samples.reserve(MaxSamples);
+
+		std::cout << "\nDRAWING MODE IS ACTIVE\n";
 
 		// Application
 		RayTracerApp app;
@@ -172,7 +188,7 @@ namespace Simulation {
 			}
 
 			// Add sample
-			if (Samples.size() < MaxSamples)
+			if (Samples.size() < MaxSamples && DrawingMode)
 			{
 
 				
@@ -202,7 +218,7 @@ namespace Simulation {
 				glm::vec4& Pos = Objects[i].Position;
 				Pos.x = (Samples[i].Position.x) * (OrthographicRange - 1.0f);
 				Pos.y = (Samples[i].Position.y) * (OrthographicRange - 1.0f);
-				Pos.w = Samples[i].Active ? 8.0f : 2.0f;
+				Pos.w = Samples[i].Active ? 8.0f : 0.5f;
 			}
 
 			// Object SSBO

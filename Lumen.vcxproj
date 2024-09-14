@@ -151,6 +151,7 @@
   <ItemGroup>
     <ClInclude Include="Core\Application\Application.h" />
     <ClInclude Include="Core\Application\Logger.h" />
+    <ClInclude Include="Core\DFT.h" />
     <ClInclude Include="Core\GLClasses\ComputeShader.h" />
     <ClInclude Include="Core\GLClasses\CubeTextureMap.h" />
     <ClInclude Include="Core\GLClasses\DepthBuffer.h" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Core\Object.h" />
     <ClInclude Include="Core\Orthographic.h" />
     <ClInclude Include="Core\Pipeline.h" />
+    <ClInclude Include="Core\Sample.h" />
     <ClInclude Include="Core\ShaderManager.h" />
     <ClInclude Include="Core\Utils\Random.h" />
     <ClInclude Include="Core\Utils\Timer.h" />
@@ -194,6 +196,7 @@
   <ItemGroup>
     <ClCompile Include="Core\Application\Application.cpp" />
     <ClCompile Include="Core\Application\Logger.cpp" />
+    <ClCompile Include="Core\DFT.cpp" />
     <ClCompile Include="Core\GLClasses\ComputeShader.cpp" />
     <ClCompile Include="Core\GLClasses\CubeTextureMap.cpp" />
     <ClCompile Include="Core\GLClasses\DepthBuffer.cpp" />
