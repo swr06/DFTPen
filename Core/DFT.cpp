@@ -21,6 +21,7 @@ namespace Simulation {
 
 					double Angle = Omega * double(i);
 					double Xi = Samples[i].Position[0];
+
 					C += std::complex<double>(Xi * cos(Angle), -1.0 * Xi * sin(Angle));
 				}
 
@@ -43,6 +44,7 @@ namespace Simulation {
 
 					double Angle = Omega * double(i);
 					double Xi = Samples[i].Position[1];
+
 					C += std::complex<double>(Xi * cos(Angle), -1.0 * Xi * sin(Angle));
 				}
 
@@ -55,7 +57,7 @@ namespace Simulation {
 	{
 		double OneOverN = 1. / double(SampCount);
 		double NormalizationFactor = 1. / double(SampCount);
-		double ScalingFactor = double(SampCount) / double(CurrentRank);
+		double ScalingFactor = 1.0f;
 		OutputSamples.resize(SampCount);
 
 		for (int i = 0; i < SampCount; i++) {
@@ -67,7 +69,7 @@ namespace Simulation {
 			}
 
 			C *= NormalizationFactor;
-			OutputSamples[i].Position.x = C.real();
+			OutputSamples[i].Position.x = C.real() * ScalingFactor;
 		}
 
 		for (int i = 0; i < SampCount; i++) {
@@ -79,7 +81,7 @@ namespace Simulation {
 			}
 
 			C *= NormalizationFactor;
-			OutputSamples[i].Position.y = C.real();
+			OutputSamples[i].Position.y = C.real() * ScalingFactor;
 			OutputSamples[i].Active = true;
 		}
 	}

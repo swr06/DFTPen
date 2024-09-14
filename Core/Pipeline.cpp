@@ -22,6 +22,10 @@ namespace Simulation {
 	glm::vec2 PrevCursorPos;
 
 	bool DrawingMode = true;
+	bool ComputerDrawMode = false;
+	long ComputerDrawObjects = 0;
+
+	int DFTQ = 2048;
 
 	// DFT :
 	bool ShouldGenDFT = false;
@@ -60,11 +64,29 @@ namespace Simulation {
 			ImGuiIO& io = ImGui::GetIO();
 			if (ImGui::Begin("Debug/Edit Mode")) {
 
+				ImGui::Text("Instructions : ");
+				ImGui::Text("R -> Reset");
+				ImGui::Text("LMB/Mouse -> Draw");
+				ImGui::Text("D -> Toggle drawing mode");
+				ImGui::Text("F -> Toggle computer drawing mode");
+				ImGui::Text("G -> Generate 32x32 DFT and render it");
+				ImGui::NewLine();
+				ImGui::NewLine();
+				ImGui::NewLine();
+
+				if (ComputerDrawMode) {
+					ImGui::Text("COMPUTER Drawing Mode is ACTIVE (toggle with F)");
+				}
+				else {
+					ComputerDrawObjects = 0;
+					ImGui::Text("COMPUTER Drawing Mode is IN-ACTIVE (toggle with F)");
+				}
 
 				if (DrawingMode)
 					ImGui::Text("Drawing Mode is ACTIVE");
 				else
 					ImGui::Text("Drawing Mode is IN-ACTIVE");
+
 
 				ImGui::Text("Samples : %d", Samples.size());
 
@@ -110,6 +132,12 @@ namespace Simulation {
 			{
 				std::cout << "\nDRAWING MODE OVER\n";
 				DrawingMode = !DrawingMode;
+			}
+			
+			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_F)
+			{
+				if (!DrawingMode)
+					ComputerDrawMode = !ComputerDrawMode;
 			}
 
 			if (e.type == Simulation::EventTypes::KeyPress && e.key == GLFW_KEY_R)
@@ -207,7 +235,7 @@ namespace Simulation {
 			}
 
 			// Add sample
-			if (Samples.size() < MaxSamples && DrawingMode)
+			if (Samples.size() < MaxSamples && DrawingMode && app.GetCurrentFrame() > 60)
 			{
 				if (CurrentCursorPos != PrevCursorPos)
 				{
@@ -231,12 +259,11 @@ namespace Simulation {
 			if (!DrawingMode && ShouldGenDFT) {
 				ShouldGenDFT = false;
 
-
 				float DFT_Time = glfwGetTime();
 
 				int N = Samples.size();
 
-				ImageDFT.CreateTransform(Samples, 128);
+				ImageDFT.CreateTransform(Samples, DFTQ);
 				Samples.clear();
 				ImageDFT.InverseTransform(Samples, N);
 
@@ -245,6 +272,9 @@ namespace Simulation {
 				DFTDeltaTime = DFT_Time2 - DFT_Time;
 
 				std::cout << "\nGENERATED DFT IN " << DFTDeltaTime << " s\n";
+
+				ComputerDrawObjects = 0;
+				ComputerDrawMode = true;
 			}
 
 
@@ -259,7 +289,7 @@ namespace Simulation {
 					glm::vec4& Pos = Objects[i].Position;
 					Pos.x = (Samples[i].Position.x) * (OrthographicRange - 1.0f);
 					Pos.y = (Samples[i].Position.y) * (OrthographicRange - 1.0f);
-					Pos.w = Samples[i].Active ? 8.0f : 0.5f;
+					Pos.w = Samples[i].Active ? 4.0f : 0.5f;
 				}
 
 				// Object SSBO
@@ -284,8 +314,10 @@ namespace Simulation {
 
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ObjectSSBO);
 
+				ComputerDrawObjects += (CurrentObjectCount / (60 * 6));
+
 				ScreenQuadVAO.Bind();
-				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, CurrentObjectCount);
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, ComputerDrawMode ? std::min(ComputerDrawObjects, (long)CurrentObjectCount) : CurrentObjectCount);
 				ScreenQuadVAO.Unbind();
 
 				glUseProgram(0);
