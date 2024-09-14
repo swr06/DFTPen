@@ -2,33 +2,53 @@
 
 namespace Simulation {
 
-	void GenerateDFT(const std::vector<Sample>& Samples, std::vector<std::complex<double>>& DFT, int Ranks, int Idx) {
-		DFT.clear();
-		DFT.resize(Ranks);
-
-		int N = Samples.size();
-
-		for (int k = 0; k < Ranks; k++) {
-			double Omega = (2.0 * 3.14159265359 * double(k)) / (double(N));
-
-			std::complex<double> C(0, 0);
-
-			for (int i = 0; i < N; i++) {
-
-				double Angle = Omega * double(i);
-				double Xi = Samples[i].Position[Idx];
-				C += std::complex<double>(Xi * cos(Angle), -Xi * sin(Angle));
-			}
-
-			DFT[k] = C;
-		}
-	}
-
 	void DFT2D::CreateTransform(const std::vector<Sample>& Samples, int Ranking)
 	{
 		CurrentRank = Ranking;
-		GenerateDFT(Samples, DFTX, Ranking, 0);
-		GenerateDFT(Samples, DFTY, Ranking, 1);
+
+		{
+			DFTX.clear();
+			DFTX.resize(CurrentRank);
+
+			int N = Samples.size();
+
+			for (int k = 0; k < CurrentRank; k++) {
+				double Omega = (2.0 * 3.14159265359 * double(k)) / (double(N));
+
+				std::complex<double> C(0, 0);
+
+				for (int i = 0; i < N; i++) {
+
+					double Angle = Omega * double(i);
+					double Xi = Samples[i].Position[0];
+					C += std::complex<double>(Xi * cos(Angle), -1.0 * Xi * sin(Angle));
+				}
+
+				DFTX[k] = C;
+			}
+		}
+
+		{
+			DFTY.clear();
+			DFTY.resize(CurrentRank);
+
+			int N = Samples.size();
+
+			for (int k = 0; k < CurrentRank; k++) {
+				double Omega = (2.0 * 3.14159265359 * double(k)) / (double(N));
+
+				std::complex<double> C(0, 0);
+
+				for (int i = 0; i < N; i++) {
+
+					double Angle = Omega * double(i);
+					double Xi = Samples[i].Position[1];
+					C += std::complex<double>(Xi * cos(Angle), -1.0 * Xi * sin(Angle));
+				}
+
+				DFTY[k] = C;
+			}
+		}
 	}
 
 	void DFT2D::InverseTransform(std::vector<Sample>& OutputSamples, int SampCount)

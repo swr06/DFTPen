@@ -18,6 +18,8 @@ namespace Simulation {
 
 		std::vector<std::complex<double>> DFTX;
 		std::vector<std::complex<double>> DFTY;
+		std::vector<bool> DFTX_Flag;
+		std::vector<bool> DFTY_Flag;
 		int CurrentRank;
 	};
 }

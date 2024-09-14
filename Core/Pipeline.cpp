@@ -212,7 +212,7 @@ namespace Simulation {
 				if (CurrentCursorPos != PrevCursorPos)
 				{
 					glm::vec2 CPos = CurrentCursorPos;
-					int Substeps = 16;
+					int Substeps = 32;
 					for (int i = 1; i <= Substeps; i++) {
 						CPos = glm::mix(PrevCursorPos, CurrentCursorPos, float(i) / float(Substeps));
 						Sample s;
@@ -236,7 +236,7 @@ namespace Simulation {
 
 				int N = Samples.size();
 
-				ImageDFT.CreateTransform(Samples, 16);
+				ImageDFT.CreateTransform(Samples, 128);
 				Samples.clear();
 				ImageDFT.InverseTransform(Samples, N);
 
@@ -303,5 +303,7 @@ namespace Simulation {
 			GLClasses::DisplayFrameRate(app.GetWindow(), "Simulation ");
 			PrevCursorPos = CurrentCursorPos;
 		}
+
+		exit(0);
 	}
 }
