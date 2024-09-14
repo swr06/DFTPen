@@ -143,7 +143,6 @@ namespace Simulation {
 	{
 		DrawingMode = true;
 		Samples.reserve(MaxSamples);
-		ImageDFT.Reserve(MaxSamples);
 
 		std::cout << "\nDRAWING MODE IS ACTIVE\n";
 
@@ -221,6 +220,7 @@ namespace Simulation {
 						s.Position /= glm::vec2(app.GetWidth(), app.GetHeight());
 						s.Position = s.Position * 2.0f - 1.0f;
 						s.Active = glfwGetMouseButton(app.GetWindow(), GLFW_MOUSE_BUTTON_LEFT);
+						
 						Samples.push_back(s);
 					}
 				}
@@ -234,12 +234,13 @@ namespace Simulation {
 
 				float DFT_Time = glfwGetTime();
 
-				ImageDFT.Create(Samples);
+				int N = Samples.size();
+
+				ImageDFT.CreateTransform(Samples, 16);
 				Samples.clear();
+				ImageDFT.InverseTransform(Samples, N);
 
 				float DFT_Time2 = glfwGetTime();
-
-				ImageDFT.InverseDFT(Samples);
 
 				DFTDeltaTime = DFT_Time2 - DFT_Time;
 
